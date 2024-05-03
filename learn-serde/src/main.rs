@@ -34,4 +34,10 @@ fn main(){
     }else if library_json.is_err(){
         println!("{:?}",library_json.err());
     }
+    let library_json = to_string(&library);
+    if library_json.is_ok(){
+        println!("{}",library_json.unwrap());
+    }else if library_json.is_err(){
+        println!("{:?}",library_json.err());
+    }
 }
