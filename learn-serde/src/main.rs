@@ -28,9 +28,9 @@ fn main(){
         books: vec![book1],
     };
 
-    let library_json = to_string(&library);
+    let library_json = to_string_pretty(&library);
     if library_json.is_ok(){
-        println!("{:?}",library_json.unwrap());
+        println!("{}",library_json.unwrap());
     }else if library_json.is_err(){
         println!("{:?}",library_json.err());
     }
