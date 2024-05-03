@@ -1,5 +1,5 @@
-use serde::{Serialize, Deserialize};
-use serde_json::{to_string, to_string_pretty};
+use serde::{de::value::Error, Deserialize, Serialize};
+use serde_json::{from_str, to_string, to_string_pretty};
 
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -40,4 +40,23 @@ fn main(){
     }else if library_json.is_err(){
         println!("{:?}",library_json.err());
     }
+    let input = r#"
+          {
+            "title": "The Kitchen Confidential",
+            "author": "Anthony Bourdain",
+            "year": 2019,
+            "pages": 300
+          }
+        "#;
+      deserialize_library(input);
+
 }
+
+fn deserialize_library(input: &str){
+    let book1 = from_str::<Book>(input);
+    if book1.is_ok(){
+        println!("{:?}",book1.unwrap());
+    }else if book1.is_err(){
+        println!("{:?}", book1.err());
+    }
+}   
