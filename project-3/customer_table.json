@@ -1,0 +1,17 @@
+{
+    "TableName": "Customers",
+    "KeySchema": [
+        { "AttributeName": "CustomerID", "KeyType": "HASH" }, 
+        { "AttributeName": "OrderDate", "KeyType": "RANGE" } 
+        /* Only if you have a sort key */
+    ],
+    "AttributeDefinitions": [
+        { "AttributeName": "CustomerID", "AttributeType": "S" }, 
+        { "AttributeName": "OrderDate", "AttributeType": "S" } 
+        /* Only if you have a sort key */
+    ],
+    "ProvisionedThroughput": {
+        "ReadCapacityUnits": 5, "WriteCapacityUnits": 5 
+        /* Adjust these values based on your expected usage */
+    }
+}

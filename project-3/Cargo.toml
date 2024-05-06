@@ -7,4 +7,7 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4.5.1"
+rusoto_core = "0.48.0"
+rusoto_dynamodb = "0.48.0"
 serde = { version = "1.0.200", features = ["derive"] }
+tokio = { version = "1.37.0", features = ["full"] }
