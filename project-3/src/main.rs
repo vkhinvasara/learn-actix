@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use actix_web::{post, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{dev::Path, get, post, web::{self, get}, App, HttpResponse, HttpServer, Responder};
 use rusoto_core::Region;
 use rusoto_dynamodb::{AttributeValue, DynamoDb, DynamoDbClient, GetItemInput, ListTablesInput, PutItemInput};
 use serde::{Deserialize, Serialize};
@@ -88,12 +88,63 @@ async fn register_customer(customer: web::Json<Customer>)-> impl Responder{
     
 }
 
+#[get("/get_customer/{id}")]
+async fn get_customer(id: web::Path<String>)-> impl Responder{
+    let client = DynamoDbClient::new(Region::ApSouth1);
+    let get_item_input = GetItemInput{ 
+        key: {
+            let mut key = HashMap::new();
+            key.insert("customer_key".to_string(), AttributeValue{
+                s: Some(id.to_string()),
+                ..Default::default()
+            });
+            key
+        },
+        table_name: "Customer".to_string(),
+        ..Default::default()
+    };
+    match client.get_item(get_item_input).await{
+        Ok(output) => {
+            match output.item{
+                Some(item) => {
+                    let name = item.get("name").unwrap().s.as_ref().unwrap();
+                    let age = item.get("age").unwrap().n.as_ref().unwrap();
+                    let active = item.get("active").unwrap().bool.as_ref().unwrap();
+                    let address = item.get("address").unwrap().m.as_ref().unwrap();
+                    let street = address.get("street").unwrap().s.as_ref().unwrap();
+                    let city = address.get("city").unwrap().s.as_ref().unwrap();
+                    let state = address.get("state").unwrap().s.as_ref().unwrap();
+                    let zip = address.get("zip").unwrap().s.as_ref().unwrap();
+                    let customer = Customer{
+                        id: id.to_string(),
+                        name: name.to_string(),
+                        age: age.parse().unwrap(),
+                        active: *active,
+                        address: Address{
+                            street: street.to_string(),
+                            city: city.to_string(),
+                            state: state.to_string(),
+                            zip: zip.to_string(),
+                        }
+                    };
+                    HttpResponse::Ok().json(customer)
+                },
+                None => HttpResponse::NotFound().body("Customer not found")
+            }
+        },
+        Err(error) => {
+            println!("Error: {:?}", error);
+            HttpResponse::InternalServerError().body("Something went wrong")
+        }
+    }
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()>{
     HttpServer::new(||{
         App::new()
             .service(register_customer)
+            .service(get_customer)
     })
     .bind(("127.0.0.1", 8080))?
     .run()
