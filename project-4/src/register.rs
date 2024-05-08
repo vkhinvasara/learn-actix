@@ -1,16 +1,24 @@
 use actix_web::{post, web, HttpResponse, Responder};
 use bcrypt::{hash, verify, DEFAULT_COST};
+use jsonwebtoken::{encode, EncodingKey, Header};
 use rusoto_core::Region;
 use rusoto_dynamodb::{
     AttributeValue, DeleteItemInput, DynamoDb, DynamoDbClient, GetItemInput, PutItemInput,
 };
-use serde::Deserialize;
-use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, env};
+use dotenv::dotenv;
 
 #[derive(Deserialize)]
-pub struct CustomerDetails {
+struct CustomerDetails {
     pub username: String,
     pub password: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+struct Claims {
+    sub: String,
+    exp: usize,
 }
 
 #[post("/register")]
@@ -46,11 +54,27 @@ pub async fn register(register: web::Json<CustomerDetails>) -> impl Responder {
         ..Default::default()
     };
     match client.put_item(input).await {
-        Ok(_) => HttpResponse::Ok().body("Successfully registered"),
+        Ok(_) => {
+            let token = get_token(username.clone()).await;
+            HttpResponse::Ok().body(token)
+        },
         Err(_) => HttpResponse::InternalServerError().body("Error in registering"),
     }
 }
 
+async fn get_token(username: String) -> String {
+    dotenv().ok();
+    let claims = Claims {
+        sub: username,
+        exp: 10000000000,
+    };
+    let token = encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(env::var("SECRET").unwrap().as_ref()),
+    ).unwrap();
+    token
+}
 async fn check_if_registerd(username: String) -> bool {
     let client = DynamoDbClient::new(Region::ApSouth1);
     let mut key = HashMap::new();

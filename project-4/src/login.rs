@@ -54,5 +54,5 @@ pub async fn login(login: web::Json<Login>) -> impl Responder {
         },
         Err(_) => HttpResponse::InternalServerError().body("Error in logging in"),
     };
-    "login"
+    HttpResponse::Ok().body("Successfully logged in")
 }
