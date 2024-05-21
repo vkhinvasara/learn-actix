@@ -4,7 +4,7 @@ use dotenv::dotenv;
 use jsonwebtoken::{encode, EncodingKey, Header};
 use rusoto_core::Region;
 use rusoto_dynamodb::{
-    AttributeValue, DeleteItemInput, DynamoDb, DynamoDbClient, GetItemInput, PutItemInput,
+    AttributeValue, DynamoDb, DynamoDbClient, GetItemInput, PutItemInput,
 };
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, env};
@@ -12,8 +12,8 @@ use actix_session::{config::{BrowserSession, CookieContentSecurity}, storage::Co
 
 #[derive(Deserialize)]
 struct CustomerDetails {
-    pub username: String,
-    pub password: String,
+     username: String,
+     password: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -58,7 +58,7 @@ pub async fn register(register: web::Json<CustomerDetails>) -> impl Responder {
         Ok(_) => {
             let token = get_token(username.clone()).await;
             let mut response = HttpResponse::Ok();
-            set_session(&mut response, token.clone());
+            set_session(&mut response, token.clone()).await;
             response.body(token)
         }
         Err(_) => HttpResponse::InternalServerError().body("Error in registering"),
