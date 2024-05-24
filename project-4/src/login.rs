@@ -10,7 +10,7 @@ use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
 pub async fn login(customer: web::Json<CustomerDetails>) -> impl Responder {
     let customer = customer.into_inner();
     let username = &customer.username;
-    let password = hash(&customer.password, DEFAULT_COST).expect("Error hashing password");
+    let password = &customer.password;
     let client = DynamoDbClient::new(Region::ApSouth1);
 
     let mut key: HashMap<String, rusoto_dynamodb::AttributeValue> = HashMap::new();
@@ -38,6 +38,8 @@ pub async fn login(customer: web::Json<CustomerDetails>) -> impl Responder {
                         set_session(&mut response, token.clone()).await;
                         response.body(token);
                         return HttpResponse::Ok().body("Login successful");
+                    }else{
+                        return HttpResponse::Unauthorized().body("Invalid password");
                     }
                 }
                 None => return HttpResponse::Unauthorized().body("Invalid username"),
@@ -45,5 +47,4 @@ pub async fn login(customer: web::Json<CustomerDetails>) -> impl Responder {
         }
         Err(_) => return HttpResponse::InternalServerError().body("Error in login"),
     }
-    HttpResponse::Ok().body("Login successful")
 }
