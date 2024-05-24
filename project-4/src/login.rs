@@ -1,58 +1,49 @@
 use std::collections::HashMap;
-
 use actix_web::{post, web, HttpResponse, Responder};
 use bcrypt::{hash, verify, DEFAULT_COST};
+use crate::register::{CustomerDetails,get_token, set_session};
 use rusoto_core::Region;
-use rusoto_dynamodb::{
-    AttributeValue, DeleteItemInput, DynamoDb, DynamoDbClient, GetItemInput, PutItemInput,
-};
-use serde::Deserialize;
+use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
 
-#[derive(Deserialize)]
-pub struct Login {
-    pub username: String,
-    pub password: String,
-}
+
 #[post("/login")]
-pub async fn login(login: web::Json<Login>) -> impl Responder {
-    let login = login.into_inner();
-    let username = login.username;
-    let password = hash(&login.password, DEFAULT_COST).unwrap();
-
+pub async fn login(customer: web::Json<CustomerDetails>) -> impl Responder {
+    let customer = customer.into_inner();
+    let username = &customer.username;
+    let password = hash(&customer.password, DEFAULT_COST).expect("Error hashing password");
     let client = DynamoDbClient::new(Region::ApSouth1);
-    let mut key = HashMap::new();
+
+    let mut key: HashMap<String, rusoto_dynamodb::AttributeValue> = HashMap::new();
     key.insert(
         "username".to_string(),
-        AttributeValue {
+        rusoto_dynamodb::AttributeValue {
             s: Some(username.clone()),
             ..Default::default()
         },
     );
-    key.insert(
-        "password".to_string(),
-        AttributeValue {
-            s: Some(password.clone()),
-            ..Default::default()
-        },
-    );
-    let input = GetItemInput {
+    let input = rusoto_dynamodb::GetItemInput {
         table_name: "customer_login_details".to_string(),
         key,
         ..Default::default()
     };
+
     match client.get_item(input).await {
-        Ok(output) => match output.item {
-            Some(item) => {
-                let password = item.get("password").unwrap().s.as_ref().unwrap();
-                if verify(&login.password, password).unwrap() {
-                    HttpResponse::Ok().body("Successfully logged in")
-                } else {
-                    HttpResponse::Unauthorized().body("Invalid password")
+        Ok(output) => {
+            match output.item {
+                Some(item) => {
+                    let stored_password = item.get("password").unwrap().s.as_ref().unwrap();
+                    if verify(password, stored_password).unwrap() {
+                        let token = get_token(username.clone()).await;
+                        let mut response = HttpResponse::Ok();
+                        set_session(&mut response, token.clone()).await;
+                        response.body(token);
+                        return HttpResponse::Ok().body("Login successful");
+                    }
                 }
+                None => return HttpResponse::Unauthorized().body("Invalid username"),
             }
-            None => HttpResponse::Unauthorized().body("Invalid username"),
-        },
-        Err(_) => HttpResponse::InternalServerError().body("Error in logging in"),
-    };
-    HttpResponse::Ok().body("Successfully logged in")
+        }
+        Err(_) => return HttpResponse::InternalServerError().body("Error in login"),
+    }
+    HttpResponse::Ok().body("Login successful")
 }

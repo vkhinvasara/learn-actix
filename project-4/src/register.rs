@@ -1,25 +1,30 @@
-use actix_web::{cookie::{Cookie, Key, SameSite}, post, web, HttpResponse, HttpResponseBuilder, Responder};
-use bcrypt::{hash, verify, DEFAULT_COST};
+use actix_session::{
+    config::{BrowserSession, CookieContentSecurity},
+    storage::CookieSessionStore,
+    SessionMiddleware,
+};
+use actix_web::{
+    cookie::{Cookie, Key, SameSite},
+    post, web, HttpResponse, HttpResponseBuilder, Responder,
+};
+use bcrypt::{hash, DEFAULT_COST};
 use dotenv::dotenv;
 use jsonwebtoken::{encode, EncodingKey, Header};
 use rusoto_core::Region;
-use rusoto_dynamodb::{
-    AttributeValue, DynamoDb, DynamoDbClient, GetItemInput, PutItemInput,
-};
+use rusoto_dynamodb::{AttributeValue, DynamoDb, DynamoDbClient, GetItemInput, PutItemInput};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, env};
-use actix_session::{config::{BrowserSession, CookieContentSecurity}, storage::CookieSessionStore, SessionMiddleware};
 
 #[derive(Deserialize)]
-struct CustomerDetails {
-     username: String,
-     password: String,
+pub struct CustomerDetails {
+    pub username: String,
+    pub password: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
-struct Claims {
-    sub: String,
-    exp: usize,
+pub struct Claims {
+    pub sub: String,
+    pub exp: usize,
 }
 
 #[post("/register")]
@@ -65,7 +70,7 @@ pub async fn register(register: web::Json<CustomerDetails>) -> impl Responder {
     }
 }
 
-async fn get_token(username: String) -> String {
+pub async fn get_token(username: String) -> String {
     dotenv().ok();
     let claims = Claims {
         sub: username,
@@ -106,12 +111,13 @@ async fn check_if_registerd(username: String) -> bool {
     }
 }
 
-pub fn session_middleware() -> SessionMiddleware<CookieSessionStore>{
+pub fn session_middleware() -> SessionMiddleware<CookieSessionStore> {
     dotenv().ok();
     SessionMiddleware::builder(
         CookieSessionStore::default(),
         Key::from(env::var("COOKIE_SESSION_KEY").unwrap().as_ref()),
-    ).cookie_name(String::from("JWT token"))
+    )
+    .cookie_name(String::from("JWT token"))
     .cookie_secure(true)
     .session_lifecycle(BrowserSession::default())
     .cookie_same_site(SameSite::Strict)
@@ -120,10 +126,10 @@ pub fn session_middleware() -> SessionMiddleware<CookieSessionStore>{
     .build()
 }
 
-pub async fn set_session(response: &mut HttpResponseBuilder, token: String){
-    let cookie = Cookie::build("JWT token", token)
-    .secure(true) // Only send the cookie over HTTPS
-    .http_only(true) // Don't allow JavaScript to access the cookie
-    .finish();
+pub async fn set_session(response: &mut HttpResponseBuilder, token: String) {
+    let cookie = Cookie::build("JWT_TOKEN", token)
+        .secure(true) 
+        .http_only(true) 
+        .finish();
     response.cookie(cookie);
 }

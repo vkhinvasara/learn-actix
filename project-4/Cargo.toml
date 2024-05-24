@@ -11,6 +11,7 @@ actix-web = "4.5.1"
 bcrypt = "0.15.1"
 dotenv = "0.15.0"
 jsonwebtoken = "9.3.0"
+regex = "1.10.4"
 rusoto_core = "0.48.0"
 rusoto_dynamodb = "0.48.0"
 serde = { version = "1.0.201", features = ["derive"] }
