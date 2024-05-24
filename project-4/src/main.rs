@@ -10,7 +10,8 @@ async fn main() -> std::io::Result<()> {
             .service(register::register)
             .service(login::login)
             .wrap(Logger::default())
-            .wrap(register::session_middleware())
+            .wrap(login::session_middleware())
+
     })
     .bind(("127.0.0.1", 8080))?
     .run()
