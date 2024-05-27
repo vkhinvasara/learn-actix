@@ -1,13 +1,6 @@
 use crate::register::CustomerDetails;
-use actix_session::{
-    config::{BrowserSession, CookieContentSecurity},
-    storage::CookieSessionStore,
-    Session, SessionMiddleware,
-};
-use actix_web::{
-    cookie::{Cookie, Key, SameSite},
-    post, web, HttpResponse, HttpResponseBuilder, Responder,
-};
+use actix_session::{config::{BrowserSession, CookieContentSecurity},storage::CookieSessionStore, Session, SessionMiddleware,};
+use actix_web::{cookie::{Cookie, Key, SameSite},post, web, HttpResponse, HttpResponseBuilder, Responder,};
 use bcrypt::verify;
 use dotenv::dotenv;
 use jsonwebtoken::{encode, EncodingKey, Header};
@@ -15,10 +8,13 @@ use rusoto_core::Region;
 use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, env};
+
+
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Claims {
     pub sub: String,
     pub exp: usize,
+    pub role: String,
 }
 
 #[post("/login")]
@@ -47,7 +43,7 @@ pub async fn login(customer: web::Json<CustomerDetails>, session: Session) -> im
             Some(item) => {
                 let stored_password = item.get("password").unwrap().s.as_ref().unwrap();
                 if verify(password, stored_password).unwrap() {
-                    let token = get_token(username.clone());
+                    let token = get_token(username.clone(), item.get("role").unwrap().s.as_ref().unwrap().clone());
                     let mut response = HttpResponse::Ok();
                     set_session(&mut response, token.clone());
                     session.insert("JWT_TOKEN", token.clone()).unwrap();
@@ -84,11 +80,12 @@ pub fn set_session(response: &mut HttpResponseBuilder, token: String) {
         .finish();
     response.cookie(cookie);
 }
-pub fn get_token(username: String) -> String {
+pub fn get_token(username: String, role: String) -> String {
     dotenv().ok();
     let claims = Claims {
         sub: username,
         exp: 10000000000,
+        role
     };
     let token = encode(
         &Header::default(),

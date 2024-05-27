@@ -1,7 +1,7 @@
-use actix_web::{post, web, App, HttpResponse, HttpServer, Responder, middleware::Logger};
-
+use actix_web::{middleware::Logger,  App, HttpServer};
 pub mod login;
 pub mod register;
+
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
