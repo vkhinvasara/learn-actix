@@ -1,6 +1,13 @@
 use crate::register::CustomerDetails;
-use actix_session::{config::{BrowserSession, CookieContentSecurity},storage::CookieSessionStore, Session, SessionMiddleware,};
-use actix_web::{cookie::{Cookie, Key, SameSite},post, web, HttpResponse, HttpResponseBuilder, Responder,};
+use actix_session::{
+    config::{BrowserSession, CookieContentSecurity},
+    storage::CookieSessionStore,
+    Session, SessionMiddleware,
+};
+use actix_web::{
+    cookie::{Cookie, Key, SameSite},
+    post, web, HttpResponse, HttpResponseBuilder, Responder,
+};
 use bcrypt::verify;
 use dotenv::dotenv;
 use jsonwebtoken::{encode, EncodingKey, Header};
@@ -8,7 +15,6 @@ use rusoto_core::Region;
 use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, env};
-
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Claims {
@@ -43,7 +49,10 @@ pub async fn login(customer: web::Json<CustomerDetails>, session: Session) -> im
             Some(item) => {
                 let stored_password = item.get("password").unwrap().s.as_ref().unwrap();
                 if verify(password, stored_password).unwrap() {
-                    let token = get_token(username.clone(), item.get("role").unwrap().s.as_ref().unwrap().clone());
+                    let token = get_token(
+                        username.clone(),
+                        item.get("role").unwrap().s.as_ref().unwrap().clone(),
+                    );
                     let mut response = HttpResponse::Ok();
                     set_session(&mut response, token.clone());
                     session.insert("JWT_TOKEN", token.clone()).unwrap();
@@ -64,7 +73,7 @@ pub fn session_middleware() -> SessionMiddleware<CookieSessionStore> {
         CookieSessionStore::default(),
         Key::from(env::var("COOKIE_SESSION_KEY").unwrap().as_ref()),
     )
-    .cookie_name(String::from("JWT token"))
+    .cookie_name(String::from("JWT_TOKEN"))
     .cookie_secure(true)
     .session_lifecycle(BrowserSession::default())
     .cookie_same_site(SameSite::Strict)
@@ -85,7 +94,7 @@ pub fn get_token(username: String, role: String) -> String {
     let claims = Claims {
         sub: username,
         exp: 10000000000,
-        role
+        role,
     };
     let token = encode(
         &Header::default(),

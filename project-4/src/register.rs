@@ -11,6 +11,7 @@ use std::fmt;
 
 #[derive(Deserialize)]
 pub struct CustomerDetails {
+    pub id: usize,
     pub username: String,
     pub password: String,
     pub role: UserRole,
@@ -19,7 +20,7 @@ pub struct CustomerDetails {
 #[derive(Deserialize)]
 pub enum UserRole{
     Admin, 
-    User
+    User,
 }
 impl fmt::Display for UserRole {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -33,12 +34,20 @@ impl fmt::Display for UserRole {
 #[post("/register")]
 pub async fn register(register: web::Json<CustomerDetails>) -> impl Responder {
     let register = register.into_inner();
+    let id = register.id;
     let username = register.username;
     let password = hash(&register.password, DEFAULT_COST).unwrap();
     let role = register.role;
     let client = DynamoDbClient::new(Region::ApSouth1);
 
     let mut item = HashMap::new();
+    item.insert(
+        "id".to_string(),
+        AttributeValue {
+            n: Some(id.to_string()),
+            ..Default::default()
+        },
+    );
     item.insert(
         "username".to_string(),
         AttributeValue {
