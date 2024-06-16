@@ -1,7 +1,7 @@
-use actix_web::{post, web, App, HttpResponse, HttpServer, Responder};
-
+use actix_web::{middleware::Logger,  App, HttpServer};
 pub mod login;
 pub mod register;
+pub mod operations;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -9,7 +9,10 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .service(register::register)
             .service(login::login)
-            .wrap(register::session_middleware())
+            .service(operations::get_user_details)
+            .wrap(Logger::default())
+            .wrap(login::session_middleware())
+
     })
     .bind(("127.0.0.1", 8080))?
     .run()
