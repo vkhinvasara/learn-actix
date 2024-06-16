@@ -24,7 +24,7 @@ fn check_user_role(token: &str) -> Result<UserRole, &str> {
 }
 
 fn get_sesion_token(session: &Session) -> String{
-    let token = session.get("JWT_TOKEN").unwrap();
+    let token: Option<String> = session.get("JWT_TOKEN").unwrap();
     print!("{:?}", &token);
     match token {
         Some(token) => token as String,
