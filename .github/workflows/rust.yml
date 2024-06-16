@@ -1,4 +1,4 @@
-name: Rust
+name: Multi-Project Build
 
 on:
   push:
@@ -10,12 +10,47 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  build-learn-serde:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
+    - name: Build learn-serde
+      run: |
+        cd learn-serde
+        cargo build --verbose
 
+  build-project-1:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build project-1
+      run: |
+        cd project-1
+        cargo build --verbose
+
+  build-project-2:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build project-2
+      run: |
+        cd project-2
+        cargo build --verbose
+
+  build-project-3:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build project-3
+      run: |
+        cd project-3
+        cargo build --verbose
+
+  build-project-4:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build project-4
+      run: |
+        cd project-4
+        cargo build --verbose
