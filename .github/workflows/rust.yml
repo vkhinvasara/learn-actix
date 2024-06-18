@@ -54,3 +54,12 @@ jobs:
       run: |
         cd project-4
         cargo build --verbose
+
+  build-project-5:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build project-5
+      run: |
+        cd project-5
+        cargo build --verbose
